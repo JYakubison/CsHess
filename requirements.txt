@@ -1,3 +1,4 @@
 slackclient>=2.0.0
 slackeventsapi>=2.1.0
 Flask>=1.1.1
+python-chess>=0.30.1
