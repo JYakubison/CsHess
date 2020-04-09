@@ -4,6 +4,7 @@ from slack import WebClient
 from slackeventsapi import SlackEventAdapter
 import chess
 from message_blocks import MessageBlocks
+import json
 
 # Initializing the Flask app to host event adapter
 app = Flask(__name__)
@@ -53,16 +54,37 @@ def challenge():
 
 # Recieves Button input
 # @app.route('/button', method=['GET'])
-@app.route('/slack/interactive')
-def button(event_data):
+@app.route('/slack/interactive', methods=["POST"])
+def button():
+    payload_data = json.loads(request.form["payload"])
     # Checks for type button
-    if event_data["actions"]["type"] == "button":
+
+    if payload_data["actions"][0]["type"] == "button":
+
+        # Info of user who clicked on the button and who sent the challenge
+        receiver_info = slack_web_client.users_info(user=payload_data["user"]["id"])
+        receiver_id = receiver_info["user"]["id"]
+        
+        sender_info = slack_web_client.users_info(user=payload_data["actions"][0]["value"])
+        sender_id = sender_info["user"]["id"]
+    
         # Accept Button
-        if event_data["actions"]["action_id"] == "accept_challenge":
-            sender_id = event_data["event"]["value"]
+        if payload_data["actions"][0]["action_id"] == "accept_challenge":
+            sender = 0
         # Deny Button
-        if event_data["actions"]["action_id"] == "deny_challenge":
-            slack_events_adapter.chat_delete()
+        if payload_data["actions"][0]["action_id"] == "deny_challenge":
+            slack_web_client.chat_delete(channel=payload_data["channel"]["id"], ts=payload_data["message"]["ts"])
+            # Print Challenge Denied message to reciever
+            slack_web_client.chat_postMessage(channel=payload_data["channel"]["id"],
+                                              text=sender_info["user"]["profile"]["display_name"] + "\'s challenge "
+                                                                                                    "was denied")
+
+            # Opening a conversation to tell sender challenge was denied
+            response = slack_web_client.conversations_open(users=sender_id)
+            challenge_channel_id = response["channel"]["id"]
+            slack_web_client.chat_postMessage(channel=challenge_channel_id,
+                                              text=receiver_info["user"]["profile"]["display_name"] + " denied your "
+                                                                                                      "challenge")
 
 
 # Running the app
