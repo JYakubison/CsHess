@@ -13,9 +13,6 @@ slack_events_adapter = SlackEventAdapter(os.environ['CSHESS_SLACK_SIGNING_SECRET
 # Initializing web API client
 slack_web_client = WebClient(token=os.environ['CSHESS_SLACK_BOT_TOKEN'])
 
-# Dictionary to hold all of the challenges
-challenges_dictionary = {}
-
 
 # Expects input in form /challenge @user
 @app.route('/slack/challenge', methods=['POST'])
@@ -38,16 +35,12 @@ def challenge():
     response = slack_web_client.conversations_open(users=user2_id)
     challenge_channel_id = response["channel"]["id"]
 
-    m_blocks = MessageBlocks(channel=challenge_channel_id,
-                             user1_name=user1_info["user"]["profile"]["display_name"],
-                             user1_id=user1_id)
-
-    challenge_response = slack_web_client.chat_postMessage(**m_blocks.get_challenge_blocks(), text="You have been "
-                                                                                                   "challenged by " +
-                                                                                                   user1_info[
-                                                                                                       "user"][
-                                                                                                       "profile"][
-                                                                                                       "display_name"])
+    challenge_response = slack_web_client.chat_postMessage(**MessageBlocks.get_challenge_blocks(
+        channel=challenge_channel_id,
+        user1_name=user1_info["user"]["profile"]["display_name"],
+        user1_id=user1_id),
+                                                           text="You have been challenged by " +
+                                                                user1_info["user"]["profile"]["display_name"])
 
     return "Sent a challenge to: " + user2_info["user"]["profile"]["display_name"]
 
@@ -57,35 +50,55 @@ def challenge():
 @app.route('/slack/interactive', methods=["POST"])
 def button():
     payload_data = json.loads(request.form["payload"])
-    # Checks for type button
 
+    # Checks for type button
     if payload_data["actions"][0]["type"] == "button":
 
         # Info of user who clicked on the button and who sent the challenge
         receiver_info = slack_web_client.users_info(user=payload_data["user"]["id"])
         receiver_id = receiver_info["user"]["id"]
-        
+
         sender_info = slack_web_client.users_info(user=payload_data["actions"][0]["value"])
         sender_id = sender_info["user"]["id"]
-    
+
         # Accept Button
         if payload_data["actions"][0]["action_id"] == "accept_challenge":
-            sender = 0
-        # Deny Button
-        if payload_data["actions"][0]["action_id"] == "deny_challenge":
+            # Deleting message
             slack_web_client.chat_delete(channel=payload_data["channel"]["id"], ts=payload_data["message"]["ts"])
-            # Print Challenge Denied message to reciever
+            # Post Color Select Message
+            slack_web_client.chat_postMessage(**MessageBlocks.get_color_selection_block(
+                channel=payload_data["channel"]["id"], challenger_id=sender_id),
+                                              text="Select a color!")
+
+        # Deny Button
+        elif payload_data["actions"][0]["action_id"] == "deny_challenge":
+            # Deleting message
+            slack_web_client.chat_delete(channel=payload_data["channel"]["id"], ts=payload_data["message"]["ts"])
+            # Print Challenge Denied message to receiver
             slack_web_client.chat_postMessage(channel=payload_data["channel"]["id"],
-                                              text=sender_info["user"]["profile"]["display_name"] + "\'s challenge "
-                                                                                                    "was denied")
+                                              text=sender_info["user"]["profile"][
+                                                       "display_name"] + "\'s challenge was denied")
 
             # Opening a conversation to tell sender challenge was denied
             response = slack_web_client.conversations_open(users=sender_id)
             challenge_channel_id = response["channel"]["id"]
             slack_web_client.chat_postMessage(channel=challenge_channel_id,
-                                              text=receiver_info["user"]["profile"]["display_name"] + " denied your "
-                                                                                                      "challenge")
+                                              text=receiver_info["user"]["profile"][
+                                                       "display_name"] + " denied your challenge")
 
+        # White Pieces button
+        elif payload_data["actions"][0]["action_id"] == "white_pieces":
+            # Deleting message
+            slack_web_client.chat_delete(channel=payload_data["channel"]["id"], ts=payload_data["message"]["ts"])
+            slack_web_client.chat_postMessage(channel=payload_data["channel"]["id"],
+                                              text="You selected white.")
+
+        # Black Pieces button
+        elif payload_data["actions"][0]["action_id"] == "black_pieces":
+            # Deleting message
+            slack_web_client.chat_delete(channel=payload_data["channel"]["id"], ts=payload_data["message"]["ts"])
+            slack_web_client.chat_postMessage(channel=payload_data["channel"]["id"],
+                                              text="You selected black.")
 
 # Running the app
 if __name__ == "__main__":
