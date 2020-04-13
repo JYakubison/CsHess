@@ -144,7 +144,7 @@ def button():
 
 
 # Recieves messages posted in channels to recieve moves
-# expects moves in Universal Chess Interface format (g1f3 = move from g1 to f3)
+# expects moves in "m: UCI_MOVE"  (Universal Chess Interface = UCI, g1f3 = move from g1 to f3)
 @slack_events_adapter.on("message")
 def message_event(payload):
     event_input = payload["event"]
@@ -170,6 +170,9 @@ def message_event(payload):
             if move_response == "success_move":
                 # Prints board
                 slack_web_client.chat_postMessage(**game_dict[channel_id].print_board_block())
+            elif move_response == "into_check":
+                # Prints board with check message
+                slack_web_client.chat_postMessage(**game_dict[channel_id].print_board_block(True))
             elif move_response == "invalid_move":
                 slack_web_client.chat_postMessage(channel=channel_id, text="That move was invalid")
             elif move_response == "invalid_form":
@@ -178,6 +181,10 @@ def message_event(payload):
                 slack_web_client.chat_postMessage(channel=channel_id, text="It is not your turn")
             elif move_response == "invalid_user":
                 slack_web_client.chat_postMessage(channel=channel_id, text="You are not in this game")
+            elif move_response == "game_over":
+                slack_web_client.chat_postMessage(**game_dict[channel_id].get_game_over_message())
+                del game_dict[channel_id]
+
         else:
             slack_web_client.chat_postMessage(channel=channel_id, text="GAME NOT FOUND")
     return ""
