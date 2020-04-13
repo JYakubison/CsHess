@@ -134,7 +134,6 @@ def button():
                                                        channel=dm_data["channel"]["id"],
                                                        recipient_color=chess.BLACK)
 
-
             # Starting game message
             slack_web_client.chat_postMessage(**game_dict[dm_data["channel"]["id"]].start_game_message())
 
@@ -143,6 +142,45 @@ def button():
 
         return ""
 
+
+# Recieves messages posted in channels to recieve moves
+# expects moves in Universal Chess Interface format (g1f3 = move from g1 to f3)
+@slack_events_adapter.on("message")
+def message_event(payload):
+    event_input = payload["event"]
+
+    channel_id = event_input["channel"]
+
+    user_id = event_input["user"]
+
+    # Try to check if message is in format "m: MOVE"
+    if event_input["text"][0:2] == "m:":
+        try:
+            split_message = event_input["text"].split()
+            text_input = split_message[1]
+        except ValueError:
+            return ""
+    else:
+        return ""
+
+    if event_input["channel_type"] == "mpim" and split_message[0] == "m:":
+        # checks to see if channel has a game currently active
+        if game_dict[channel_id]:
+            move_response = game_dict[channel_id].check_move(user_id=user_id, move_text=text_input)
+            if move_response == "success_move":
+                # Prints board
+                slack_web_client.chat_postMessage(**game_dict[channel_id].print_board_block())
+            elif move_response == "invalid_move":
+                slack_web_client.chat_postMessage(channel=channel_id, text="That move was invalid")
+            elif move_response == "invalid_form":
+                slack_web_client.chat_postMessage(channel=channel_id, text="That form was invalid")
+            elif move_response == "out_of_turn":
+                slack_web_client.chat_postMessage(channel=channel_id, text="It is not your turn")
+            elif move_response == "invalid_user":
+                slack_web_client.chat_postMessage(channel=channel_id, text="You are not in this game")
+        else:
+            slack_web_client.chat_postMessage(channel=channel_id, text="GAME NOT FOUND")
+    return ""
 
 # Running the app
 if __name__ == "__main__":

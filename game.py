@@ -84,6 +84,40 @@ class Game:
             "text": "It is " + self.get_turn() + "'s Turn!"
         }
 
+    # Checks a move and makes it if valid, returns a string with either: success_move, invlalid_move, out_of_turn, invalid_user, invalid_form
+    def check_move(self, user_id, move_text):
+        # Checks if white user posted, and if it is their turn
+        if self.game_board.turn == chess.WHITE and user_id == self.white_id:
+            try:
+                new_move = chess.Move.from_uci(uci=move_text)
+
+                # Checks if move is legal
+                if new_move in self.game_board.legal_moves:
+                    self.game_board.push(new_move) # Pushes new move to the board
+                    return "success_move"
+                else:
+                    return "invalid_move"
+            except ValueError: # Triggers if new move is in an invalid form
+                return "invalid_form"
+
+        # Checks if black user poster, and if it is their turn
+        elif self.game_board.turn == chess.BLACK and user_id == self.black_id:
+            try:
+                new_move = chess.Move.from_uci(uci=move_text)
+
+                # Checks if move is legal
+                if new_move in self.game_board.legal_moves:
+                    self.game_board.push(new_move) # Pushes new move to the board
+                    return "success_move"
+                else:
+                    return "invalid_move"
+            except ValueError: # Triggers if new move is in an invalid form
+                return "invalid_form"
+        elif user_id == self.white_id or user_id == self.black_id:
+            return "out_of_turn"
+        else:
+            return "invalid_user"
+
     # Returns the current turn as "White" or "Black"
     def get_turn(self):
         if self.game_board.turn == chess.WHITE:
