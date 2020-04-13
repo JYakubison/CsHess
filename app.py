@@ -1,10 +1,14 @@
 import os
+import json
+import logging
+
 from flask import Flask, request
 from slack import WebClient
 from slackeventsapi import SlackEventAdapter
 import chess
+
 from message_blocks import MessageBlocks
-import json
+from game import Game
 
 # Initializing the Flask app to host event adapter
 app = Flask(__name__)
@@ -12,6 +16,8 @@ slack_events_adapter = SlackEventAdapter(os.environ['CSHESS_SLACK_SIGNING_SECRET
 
 # Initializing web API client
 slack_web_client = WebClient(token=os.environ['CSHESS_SLACK_BOT_TOKEN'])
+
+game_dict = {}
 
 
 # Expects input in form /challenge @user
@@ -54,10 +60,11 @@ def button():
     # Checks for type button
     if payload_data["actions"][0]["type"] == "button":
 
-        # Info of user who clicked on the button and who sent the challenge
+        # Recipient User
         receiver_info = slack_web_client.users_info(user=payload_data["user"]["id"])
         receiver_id = receiver_info["user"]["id"]
 
+        # Challenger user
         sender_info = slack_web_client.users_info(user=payload_data["actions"][0]["value"])
         sender_id = sender_info["user"]["id"]
 
@@ -91,15 +98,57 @@ def button():
             # Deleting message
             slack_web_client.chat_delete(channel=payload_data["channel"]["id"], ts=payload_data["message"]["ts"])
             slack_web_client.chat_postMessage(channel=payload_data["channel"]["id"],
-                                              text="You selected white.")
+                                              text="You selected white. Good Luck!")
+
+            # Creating group DM for game
+            dm_data = slack_web_client.conversations_open(users=[sender_id, receiver_id])
+
+            # Saving game in dictionary
+            game_dict[dm_data["channel"]["id"]] = Game(challenger_name=sender_info["user"]["profile"]["display_name"],
+                                                       recipient_name=receiver_info["user"]["profile"]["display_name"],
+                                                       challenger_id=sender_id,
+                                                       recipient_id=receiver_id,
+                                                       channel=dm_data["channel"]["id"],
+                                                       recipient_color=chess.WHITE)
+
+            # Starting game message
+            slack_web_client.chat_postMessage(**game_dict[dm_data["channel"]["id"]].start_game_message())
+
+            # Print Game Board
+            slack_web_client.chat_postMessage(channel=dm_data["channel"]["id"],
+                                              text=game_dict[dm_data["channel"]["id"]].print_board())
 
         # Black Pieces button
         elif payload_data["actions"][0]["action_id"] == "black_pieces":
             # Deleting message
             slack_web_client.chat_delete(channel=payload_data["channel"]["id"], ts=payload_data["message"]["ts"])
             slack_web_client.chat_postMessage(channel=payload_data["channel"]["id"],
-                                              text="You selected black.")
+                                              text="You selected black. Good Luck!")
+            # Creating group DM for game
+            dm_data = slack_web_client.conversations_open(users=[sender_id, receiver_id])
+
+            # Saving game in dictionary
+            game_dict[dm_data["channel"]["id"]] = Game(challenger_name=sender_info["user"]["profile"]["display_name"],
+                                                       recipient_name=receiver_info["user"]["profile"]["display_name"],
+                                                       challenger_id=sender_id,
+                                                       recipient_id=receiver_id,
+                                                       channel=dm_data["channel"]["id"],
+                                                       recipient_color=chess.BLACK)
+
+
+            # Starting game message
+            slack_web_client.chat_postMessage(**game_dict[dm_data["channel"]["id"]].start_game_message())
+
+            # Print Game Board
+            slack_web_client.chat_postMessage(channel=dm_data["channel"]["id"],
+                                              text=game_dict[dm_data["channel"]["id"]].print_board())
+
+        return ""
+
 
 # Running the app
 if __name__ == "__main__":
+    logger = logging.getLogger()
+    logger.setLevel(logging.DEBUG)
+    logger.addHandler(logging.StreamHandler())
     app.run(port=3000)
