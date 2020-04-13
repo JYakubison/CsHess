@@ -111,6 +111,8 @@ class Game:
 
                     # Checks if this move put the next player into check
                     if self.game_board.is_check():
+                        if self.game_board.is_game_over():
+                            return "game_over"
                         return "into_check"
                     # Checks if game is over
                     if self.game_board.is_game_over():
@@ -130,6 +132,16 @@ class Game:
                 # Checks if move is legal
                 if new_move in self.game_board.legal_moves:
                     self.game_board.push(new_move)  # Pushes new move to the board
+
+                    # Checks if this move put the next player into check
+                    if self.game_board.is_check():
+                        if self.game_board.is_game_over():
+                            return "game_over"
+                        return "into_check"
+                    # Checks if game is over
+                    if self.game_board.is_game_over():
+                        return "game_over"
+
                     return "success_move"
                 else:
                     return "invalid_move"
