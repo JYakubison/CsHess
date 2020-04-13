@@ -115,8 +115,7 @@ def button():
             slack_web_client.chat_postMessage(**game_dict[dm_data["channel"]["id"]].start_game_message())
 
             # Print Game Board
-            slack_web_client.chat_postMessage(channel=dm_data["channel"]["id"],
-                                              text=game_dict[dm_data["channel"]["id"]].print_board())
+            slack_web_client.chat_postMessage(**game_dict[dm_data["channel"]["id"]].print_board_block())
 
         # Black Pieces button
         elif payload_data["actions"][0]["action_id"] == "black_pieces":
@@ -140,8 +139,7 @@ def button():
             slack_web_client.chat_postMessage(**game_dict[dm_data["channel"]["id"]].start_game_message())
 
             # Print Game Board
-            slack_web_client.chat_postMessage(channel=dm_data["channel"]["id"],
-                                              text=game_dict[dm_data["channel"]["id"]].print_board())
+            slack_web_client.chat_postMessage(**game_dict[dm_data["channel"]["id"]].print_board_block())
 
         return ""
 

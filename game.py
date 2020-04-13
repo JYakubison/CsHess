@@ -42,23 +42,51 @@ class Game:
             "channel": self.channel,
             "blocks": [
                 DIVIDER_BLOCK,
+                DIVIDER_BLOCK,
                 HEADING_BLOCK,
-                PLAYER_BLOCK,
-                DIVIDER_BLOCK
-            ]
+                PLAYER_BLOCK
+            ],
+            "text": "New Game Starting!"
         }
 
     # TEMPORARY FIX TILL CUSTOM PRINT IS CREATED
     # Make More customized board print function in future
-    def print_board(self):
+    def print_board_block(self):
+        DIVIDER_BLOCK = {"type": "divider"}
+        BOARD_BLOCK = {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": self.game_board.unicode()
+            }
+        }
+
         if self.game_board.turn == chess.WHITE:
             current_turn = " It's White's - " + self.white_name + "'s turn!\n"
         else:
             current_turn = " It's Black's - " + self.black_name + "'s turn!\n"
-        return current_turn + self.game_board.unicode()
+        CURRENT_TURN_BLOCK = {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": current_turn
+            }
+        }
 
+        return {
+            "channel": self.channel,
+            "blocks": [
+                DIVIDER_BLOCK,
+                BOARD_BLOCK,
+                CURRENT_TURN_BLOCK,
+                DIVIDER_BLOCK
+            ],
+            "text": "It is " + self.get_turn() + "'s Turn!"
+        }
 
-
-    # Returns the current turn as a chess.WHITE or chess.BLACK value
+    # Returns the current turn as "White" or "Black"
     def get_turn(self):
-        return self.game_board.turn
+        if self.game_board.turn == chess.WHITE:
+            return "White"
+        else:
+            return "Black"
