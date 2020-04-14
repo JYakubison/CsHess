@@ -12,7 +12,7 @@ Plans For Future Versions:
 - Leaderboard/Win Count Tracking
 - Improved Game Storage Organization
 
-Typing "/challenge [@user]" will send out a challenge
+Typing "/challenge [@user]" will send out a challenge to the input user    
 ![Capture 1](/Images/Capture1.PNG)
 
 Upon accepting a challenge the challenged user will be given the option of which color to play
