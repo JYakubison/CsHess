@@ -18,7 +18,7 @@ Typing "/challenge [@user]" will send out a challenge to the input user
 Upon accepting a challenge the challenged user will be given the option of which color to play
 ![Capture 2](/Images/Capture2.PNG)
 
-Moves are then typed by both players into a group direct message in the form "m: a2a4"
-The program accepts moves in the UCI move format
+Moves are then typed by both players into a group direct message in the form "m: a2a4" The program accepts moves in the UCI move format
+
 ![Capture 3](/Images/Capture3.PNG)
 ![Capture 4](/Images/Capture4.PNG)
