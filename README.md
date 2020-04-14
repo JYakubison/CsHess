@@ -8,6 +8,7 @@ Current version is a complete prototype and fully functional.
 Plans For Future Versions:
 - Improved UI (Specifically Fixing Box Alignment)
 - More (and more detailed) Notifications
+- Setting up bot for distribution
 - Option to play games in a thread
 - Leaderboard/Win Count Tracking
 - Improved Game Storage Organization
